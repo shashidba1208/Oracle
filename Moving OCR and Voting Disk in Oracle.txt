@@ -1,0 +1,48 @@
+
+
+Moving OCR and Voting Disk in Oracle
+Leave a reply
+Moving OCR and Voting Disk in Oracle
+Moving OCR
+You must be logged in as the root user because the root owns the OCR files. Also, an ocrmirror must be in place before trying to replace the OCR device.
+
+Make sure there is a recent backup of the OCR file before making any changes:
+
+ocrconfig –showbackup
+If there is not a recent backup copy of the OCR file, an export can be taken for the current OCR file. Use the following command to generate an export of the online OCR file:
+
+In 10.2 
+
+# ocrconfig –export -s online
+
+In 11g
+
+# ocrconfig -manualbackup
+
+The new OCR disk must be owned by root, in the oinstall group, and have permissions set to 640. Provide at least 100 MB of disk space for the OCR.
+
+On one node as root run:
+
+# ocrconfig -replace ocr 
+# ocrconfig -replace ocrmirror 
+Now run ocrcheck to verify if the OCR is pointing to the new file
+
+Moving Voting Disk
+Note: crsctl votedisk commands must be run as root
+
+Shut down the Oracle Clusterware (crsctl stop crs as root) on all nodes before modifying the voting disk. Determine the current voting disk location using:
+
+crsctl query css votedisk
+Take a backup of all voting disks:
+
+dd if=voting_disk_name of=backup_file_name
+To move a Voting Disk, provide the full path including the file name:
+
+crsctl delete css votedisk –force
+crsctl add css votedisk –force
+After modifying the voting disk, start the Oracle Clusterware stack on all nodes
+
+# crsctl start crs
+Verify the voting disk location using 
+
+crsctl query css votedisk

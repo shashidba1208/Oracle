@@ -1,0 +1,49 @@
+
+ORA-00257:archiver error in Oracle
+Leave a reply
+Fix ORA-00257: archiver error in Oracle
+ORA-00257:archiver error occurs when your archive log reached the FRA limit. So you have to clear the archive logs or you may increase the FRA limit.
+
+To clear the archive logs files from the FAR location to solve this error ORA-00257:
+
+Firstly you can empty the location with the following commands:
+
+rman target /
+-- First take backup of archive log to different location
+RMAN> backup format '/archive/%d_%s_%p_%c.arc.bkp' archivelog from sequence 1000 until sequence 1050;
+-- If you delete manually archive from drive then need to run crosscheck 
+RMAN> crosscheck archivelog all;
+-- Delete tha archivelog present on FAR location
+RMAN> delete archivelog all;
+
+-- If you want to remove expired archive log only:
+rman target sys/put_sys_password_here
+RMAN> crosscheck archivelog all;
+RMAN> delete noprompt expired archivelog all;
+
+Secondly, Verify the location and change the archive log dest parameter to move the archive to a different location
+
+Verify the location used by Archive:
+
+archive log list
+
+SQL> archive log list
+Database log mode          	Archive Mode
+Automatic archival         	Enabled
+Archive destination        	USE_DB_RECOVERY_FILE_DEST
+Oldest online log sequence 	90
+Next log sequence to archive    92
+Current log sequence       	92
+
+OR
+
+show parameter db_recovery_file_dest;
+Check the utilization of the space which cause this error:
+
+SELECT * FROM V$RECOVERY_FILE_DEST;
+Move the archive to a different location will fix the issue also:
+
+alter system set log_archive_dest_1='LOCATION=/u03/arch' scope=both;
+
+select destination,STATUS from v$archive_dest where statuS='VALID';
+

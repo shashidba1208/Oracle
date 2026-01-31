@@ -1,0 +1,30 @@
+
+Step 1: Find 15 minutes old inactive sessions
+$vi /u01/scripts/inactive_ses.sql
+
+set lines 600
+set pages 600
+TTITLE OFF
+SET HEAD OFF
+
+SELECT 'Alter system kill session ''' || SID || ',' || SERIAL# || '''immediate;' FROM V$SESSION
+WHERE STATUS != 'ACTIVE'
+AND USERNAME = 'SCOTT'
+AND WAIT_CLASS = 'Idle'
+AND round(SECONDS_IN_WAIT/60,2) > 15;
+
+Step 2: Create shell script using above script
+$vi /u01/scripts/kill_inactive_ses.sh
+
+export ORACLE_SID=digital
+export ORACLE_BASE=/u01/app/oracle
+export ORACLE_HOME=/u01/app/oracle/product/12.2.0/dbhome_1/
+$ORACLE_HOME/bin/sqlplus -S "/as sysdba" @/u01/scripts/inactive_ses.sql > /u01/scripts/kill_inactive_ses.sql
+$ORACLE_HOME/bin/sqlplus -S "/as sysdba" @/u01/scripts/kill_inactive_ses.sql > /u01/scripts/kill_inactive_ses_out.log
+exit
+
+Step 3: Schedule shell script in crontab
+$crontab -e
+
+*/5 * * * * /u01/scripts/kill_inactive_ses.sh
+

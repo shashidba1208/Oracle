@@ -1,0 +1,32 @@
+
+Monitor lag in standby database using dgmgrl
+Script to monitor lag in standby database and send mail.
+
+#!/bin/bash
+export ORACLE_HOME=/u02/app/oracle/product/12.1.0/dbhome_1
+export ORACLE_SID=primdb
+export PATH=$ORACLE_HOME/bin:$PATH
+echo -e “show database stydb”|${ORACLE_HOME}/bin/dgmgrl sys/orcl1234 > 
+DB_DG_DATABASE.log
+cat /home/oracle/DB_DG_DATABASE.log | grep “Apply Lag” > 
+FILTERED_DB_DG_DATABASE.log
+time_value=`cut -d ” ” -f 14 FILTERED_DB_DG_DATABASE.log`
+time_param=`cut -d ” ” -f 15 FILTERED_DB_DG_DATABASE.log`
+if [[ “$time_param” == “minutes” && “$time_value” -ge 1 ]]
+then
+mailx -s “DREAIDB LAG is in minutes ” mail@gmail.com<DB_DG_DATABASE.log
+else
+if [[ “$time_param” == “seconds” && “$time_value” -ge 30 ]]
+then
+mailx -s “DREAIDB LAG is in seconds 
+” mail@gmail.com<DB_DG_DATABASE.log
+else
+if [[ “$time_param” == “hour(s)” && “$time_value” -ge 1 ]]
+then
+mailx -s “DREAIDB LAG is in hours ” mail@gmail.com
+<DB_DG_DATABASE.log
+fi
+fi
+fi
+
+https://smarttechways.com/2023/07/14/script-to-monitor-lag-in-standby-database-in-oracle/

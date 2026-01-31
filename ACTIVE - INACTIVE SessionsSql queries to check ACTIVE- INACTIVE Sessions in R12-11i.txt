@@ -1,0 +1,531 @@
+ACTIVE / INACTIVE SessionsSql queries to check ACTIVE / INACTIVE Sessions in R12/11i
+
+https://anjaniappsdba.blogspot.com/2016/09/active-inactive-sessionssql-queries-to.html
+
+Sql queries to check ACTIVE / INACTIVE Sessions
+
+Total Count of sessions
+
+select count(s.status) TOTAL_SESSIONS
+from gv$session s;
+
+Total Count of Inactive sessions
+
+select count(s.status) INACTIVE_SESSIONS
+from gv$session s, v$process p
+where
+p.addr=s.paddr and
+s.status='INACTIVE';
+
+SESSIONS WHICH ARE IN INACTIVE STATUS FROM MORE THAN 1HOUR
+select count(s.status) "INACTIVE SESSIONS > 1HOUR "
+from gv$session s, v$process p
+where
+p.addr=s.paddr and
+s.last_call_et > 3600 and
+s.status='INACTIVE';
+
+COUNT OF ACTIVE SESSIONS
+
+select count(s.status) ACTIVE_SESSIONS
+from gv$session s, v$process p
+where
+p.addr=s.paddr and
+s.status='ACTIVE';
+
+TOTAL SESSIONS COUNT ORDERED BY PROGRAM
+
+col program for a30
+select s.program,count(s.program) Total_Sessions
+from gv$session s, v$process p
+where  p.addr=s.paddr
+group by s.program;
+
+TOTAL COUNT OF SESSIONS ORDERED BY MODULE
+
+col module  for a30
+prompt TOTAL SESSIONS
+select s.module,count(s.sid) Total_Sessions
+from gv$session s, v$process p
+where  p.addr=s.paddr
+group by s.module;
+
+TOTAL COUNT OF SESSIONS ORDERED BY ACTION
+
+col action for a30
+prompt TOTAL SESSIONS
+select s.action,count(s.sid) Total_Sessions
+from gv$session s, v$process p
+where  p.addr=s.paddr
+group by s.action;
+
+INACTIVE SESSIONS
+
+prompt INACTIVE SESSIONS
+select p.spid, s.sid,s.last_call_et/3600 last_call_et ,s.status,s.action,s.module,s.program
+from gv$session s, v$process p
+where
+p.addr=s.paddr and
+s.status='INACTIVE';
+
+INACTIVE
+
+prompt INACTIVE SESSIONS
+select count(s.status) INACTIVE
+from gv$session s, gv$sqlarea t,v$process p
+where s.sql_address =t.address and
+s.sql_hash_value =t.hash_value and
+p.addr=s.paddr and
+s.status='INACTIVE';
+
+INACTIVE PROGRAMS
+
+col module for a40             
+prompt INACTIVE SESSIONS
+col INACTIVE_PROGRAMS FOR A40
+select distinct (s.program) INACTIVE_PROGRAMS,s.module
+from gv$session s, v$process p
+where  p.addr=s.paddr and
+s.status='INACTIVE';
+
+INACTIVE PROGRAMS with disk reads
+
+prompt INACTIVE SESSIONS
+select distinct (s.program) INACTIVE_PROGRAMS,SUM(T.DISK_READS)
+from gv$session s, gv$sqlarea t,v$process p
+where s.sql_address =t.address and
+s.sql_hash_value =t.hash_value and
+p.addr=s.paddr and
+s.status='INACTIVE'
+GROUP BY S.PROGRAM;
+
+INACTIVE SESSIONS COUNT WITH PROGRAM
+
+col program for a30
+prompt TOTAL INACTIVE SESSIONS
+col INACTIVE_PROGRAMS FOR A40
+select s.program,count(s.program) Total_Inactive_Sessions
+from gv$session s,v$process p
+where     p.addr=s.paddr  AND
+s.status='INACTIVE'
+group by s.program
+order by 2 desc;
+
+TOTAL INACTIVE SESSIONS MORE THAN 1HOUR
+
+col program for a30
+col INACTIVE_PROGRAMS FOR A40
+select s.program,count(s.program) Inactive_Sessions_from_1Hour
+from gv$session s,v$process p
+where     p.addr=s.paddr  AND
+s.status='INACTIVE'
+and s.last_call_et > (3600)
+group by s.program
+order by 2 desc;
+
+TOTAL INACTIVE SESSIONS GROUP BY  MODULE
+col program for a60
+COL MODULE FOR A30
+prompt TOTAL SESSIONS
+col INACTIVE_PROGRAMS FOR A40
+select s.module,count(s.module) Total_Inactive_Sessions
+from gv$session s,v$process p
+where     p.addr=s.paddr  AND
+s.status='INACTIVE'
+group by s.module;
+
+INACTIVE SESSION DETAILS MORE THAN 1 HOUR
+
+set pagesize 40
+col INST_ID for 99
+col spid for a10
+set linesize 150
+col PROGRAM for a10
+col action format a10
+col logon_time format a16
+col module format a13
+col cli_process format a7
+col cli_mach for a15
+col status format a10
+col username format a10
+col last_call_et_Hrs for 9999.99
+col sql_hash_value for 9999999999999col username for a10
+set linesize 152
+set pagesize 80
+col "Last SQL" for a60
+col elapsed_time for 999999999999
+select p.spid, s.sid,s.last_call_et/3600 last_call_et_Hrs ,s.status,s.action,s.module,s.program,t.disk_reads,lpad(t.sql_text,30) "Last SQL"
+from gv$session s, gv$sqlarea t,gv$process p
+where s.sql_address =t.address and
+s.sql_hash_value =t.hash_value and
+p.addr=s.paddr and
+s.status='INACTIVE'
+and s.last_call_et > (3600)
+order by last_call_et;
+
+INACTIVE PROGRAM  --ANY--
+
+select p.spid, s.sid,s.last_call_et/3600 last_call_et_Hrs ,s.status,s.action,s.module,s.program,t.disk_reads,lpad(t.sql_text,30) "Last SQL"
+from gv$session s, gv$sqlarea t,gv$process p
+where s.sql_address =t.address and
+s.sql_hash_value =t.hash_value and
+p.addr=s.paddr and
+s.status='INACTIVE'
+And s.program='&PROGRAM_NAME'
+order by last_call_et;
+
+INACTIVE MODULES  --ANY--
+select p.spid, s.sid,s.last_call_et/3600 last_call_et_Hrs ,s.status,s.action,s.module,s.program,t.disk_reads,lpad(t.sql_text,30) "Last SQL"
+from gv$session s, gv$sqlarea t,gv$process p
+where s.sql_address =t.address and
+s.sql_hash_value =t.hash_value and
+p.addr=s.paddr
+And s.module like '%order_cleanup_hazmat_v3.sql'
+order by last_call_et;
+
+INACTIVE JDBC SESSIONS
+
+set pagesize 40
+col INST_ID for 99
+col spid for a10
+set linesize 150
+col PROGRAM for a10
+col action format a10
+col logon_time format a16
+col module format a13
+col cli_process format a7
+col cli_mach for a15
+col status format a10
+col username format a10
+col last_call_et for 9999.99
+col sql_hash_value for 9999999999999col username for a10
+set linesize 152
+set pagesize 80
+col "Last SQL" for a60
+col elapsed_time for 999999999999
+select p.spid, s.sid,s.last_call_et/3600 last_call_et ,s.status,s.action,
+s.module,s.program,t.disk_reads,lpad(t.sql_text,30) "Last SQL"
+from gv$session s, gv$sqlarea t,gv$process p
+where s.sql_address =t.address and
+s.sql_hash_value =t.hash_value and
+p.addr=s.paddr and
+s.status='INACTIVE'
+and s.program='JDBC Thin Client'
+and s.last_call_et > 3600
+order by last_call_et;
+
+COUNT OF INACTIVE SESSIONS MORE THAN ONE HOUR
+
+SELECT COUNT(P.SPID)
+from gv$session s, gv$sqlarea t,gv$process p
+where s.sql_address =t.address and
+s.sql_hash_value =t.hash_value and
+p.addr=s.paddr and
+s.status='INACTIVE'
+and s.program='JDBC Thin Client'
+and s.last_call_et > 3600
+order by last_call_et;
+
+FORMS
+TOTAL FORM SESSIONS
+
+SELECT COUNT(S.SID) INACTIVE_FORM_SESSIONS FROM V$SESSION S
+WHERE S.STATUS='INACTIVE' and
+s.action like ('%FRM%');
+
+FORMS SESSIONS DETAILS
+
+col "Last SQL" for a30
+select p.spid,s.sid,s.status,s.last_call_et/3600 last_call_et_hrs ,
+s.sid,t.disk_reads, t.elapsed_time,lpad(t.sql_text,30) "Last SQL"
+from gv$session s, gv$sqlarea t,gv$process p
+where s.sql_address =t.address and
+s.sql_hash_value =t.hash_value and
+p.addr=s.paddr and
+s.action like ('FRM%') and
+s.last_call_et > 3600
+order by spid;                      
+
+
+col machine for a15
+col "Last SQL" for a30
+select p.spid,s.sid,s.status,s.last_call_et/3600 last_call_et_hrs ,
+S.ACTION,s.process Client_Process,s.machine
+from gv$session s, gv$sqlarea t,gv$process p
+where s.sql_address =t.address and
+s.sql_hash_value =t.hash_value and
+p.addr=s.paddr and
+s.action like ('FRM%') and
+s.last_call_et > 3600;         
+order by 4;                           
+
+INACTIVE FORMS SESSIONS DETAILS
+
+col program for a15
+col last_call_et for 999.99
+select p.spid, s.sid, s.process,s.last_call_et/3600 last_call_et ,s.status,s.action,s.module,s.program,t.disk_reads,lpad(t.sql_text,30) "Last SQL"
+from gv$session s, gv$sqlarea t,gv$process p
+where s.sql_address =t.address and
+s.sql_hash_value =t.hash_value and
+p.addr=s.paddr and
+s.status='INACTIVE'
+and s.action like 'FRM:%'
+and s.last_call_et > 3600
+order by last_call_et desc;
+
+UNIQUE SPID
+
+select unique(p.spid)
+from gv$session s, gv$sqlarea t,gv$process p
+where s.sql_address =t.address and
+s.sql_hash_value =t.hash_value and
+p.addr=s.paddr and
+s.status='INACTIVE'
+and s.action like 'FRM:%'
+and s.last_call_et > 3600;
+
+COUNT FORMS
+
+select COUNT(p.spid)
+from gv$session s, gv$sqlarea t,gv$process p
+where s.sql_address =t.address and
+s.sql_hash_value =t.hash_value and
+p.addr=s.paddr and
+s.status='INACTIVE'
+and s.action like 'FRM:%'
+and s.last_call_et > 3600;
+
+ZERO HASH VALUE
+
+select COUNT(p.spid)
+from gv$session s,gv$process p
+where
+p.addr=s.paddr and
+s.status='INACTIVE'
+and s.action like 'FRM:%'
+and s.last_call_et > 3600
+AND S.SQL_HASH_VALUE=0;
+
+INACTIVE FORM BY NAME
+
+select count(s.sid) from v$session S
+where s.action like ('%&ACTION%')
+AND S.STATUS='INACTIVE';
+
+GROUP BY ACTION
+
+SELECT S.ACTION,COUNT(S.SID) FROM V$SESSION S
+WHERE S.STATUS='INACTIVE' and
+s.action like ('%FRM%')
+group by s.action;
+
+FROM A SPECIFIC USERNAME
+
+SET LINSIZE 152
+col spid for a10
+col process_spid for a10
+col user_name for a20
+col form_name for a20
+select a.pid,a.spid,a.process_spid, c.user_name,to_char(a.start_time,'DD-MON-YYYY HH24:MI:SS') "START_TIME" ,
+d.user_form_name "FORM_NAME"
+from apps.fnd_logins a, apps.fnd_login_resp_forms b, apps.fnd_user c,
+apps.fnd_form_tl d
+where
+a.login_id=b.login_id
+and c.user_name like 'JROMO'
+and a.user_id=c.user_id
+and trunc(b.start_time) >trunc(sysdate -11)
+and trunc(b.end_time) is null
+and b.form_id=d.form_id
+and d.language='US';
+
+INACTIVE FORM
+
+set pagesize 40
+col INST_ID for 99
+col spid for a10
+set linesize 150
+col PROGRAM for a10
+col action format a10
+col logon_time format a16
+col module format a13
+col cli_process format a7
+col cli_mach for a15
+col status format a10
+col username format a10
+col last_call_et for 9999.99
+col sql_hash_value for 9999999999999col username for a10
+set linesize 152
+set pagesize 80
+col "Last SQL" for a30
+col elapsed_time for 999999999999
+select p.spid, s.sid,s.process cli_process,s.last_call_et/3600 last_call_et ,
+s.status,s.action,s.module,s.program,t.disk_reads,lpad(t.sql_text,30) "Last SQL"
+from gv$session s, gv$sqlarea t,gv$process p
+where s.sql_address =t.address and
+s.sql_hash_value =t.hash_value and
+p.addr=s.paddr and
+s.status='INACTIVE'
+and s.action like ('FRM%')
+and s.last_call_et > (3600*3)
+order by last_call_et;
+
+
+
+
+
+INACTIVE FORM SESSIONS 
+
+col cli_proc for a9
+COL AUDSID FOR A6
+COL PID FOR A6
+COL SID FOR A5
+COL FORM_NAME FOR A25
+COL USER_NAME FOR A15
+col last_call_et for 9999.99
+SELECT
+-- /*+ ORDERED FULL(fl) FULL(vp) USE_HASH(fl vp) */
+( SELECT SUBSTR ( fu.user_name, 1, 20 )
+FROM apps.fnd_user fu
+WHERE fu.user_id = fl.user_id
+) user_name,vs.status,
+TO_CHAR ( fl.start_time, 'DD-MON-YYYY HH24:MI' ) login_start_time,
+TO_CHAR ( fl.end_time, 'DD-MON-YYYY HH24:MI' ) login_end_time,
+vs.last_call_et/3600 last_call_et,
+SUBSTR ( fl.process_spid, 1, 6 ) spid,
+SUBSTR ( vs.process, 1, 8 ) cli_proc,
+SUBSTR ( TO_CHAR ( vs.sid ), 1, 3 ) sid,
+SUBSTR ( TO_CHAR ( vs.serial#), 1, 7 ) serial#,
+SUBSTR ( TO_CHAR ( rf.audsid ), 1, 6 ) audsid,
+SUBSTR ( TO_CHAR ( fl.pid ), 1, 3 ) pid,
+SUBSTR ( vs.module || ' - ' ||
+( SELECT SUBSTR ( ft.user_form_name, 1, 40 )
+FROM apps.fnd_form_tl ft
+WHERE ft.application_id = rf.form_appl_id
+AND ft.form_id        = rf.form_id
+AND ft.language       = USERENV('LANG')
+), 1, 40 ) form_name
+FROM apps.fnd_logins           fl,
+gv$process            vp,
+apps.fnd_login_resp_forms rf,
+gv$session            vs
+WHERE fl.start_time   > sysdate - 7 /* login within last 7 days */
+AND fl.login_type   = 'FORM'
+AND fl.process_spid = vp.spid
+AND fl.pid          = vp.pid
+AND fl.login_id     = rf.login_id
+AND rf.end_time    IS NULL
+AND rf.audsid       = vs.audsid
+and vs.status='INACTIVE'
+ORDER BY
+vs.process,
+fl.process_spid;
+
+ACTIVE
+
+prompt ACTIVE SESSIONS
+select count(s.status) ACTIVE
+from gv$session s, gv$sqlarea t,v$process p
+where s.sql_address =t.address and
+s.sql_hash_value =t.hash_value and
+p.addr=s.paddr and
+s.status='ACTIVE';
+
+MODULE
+
+set pagesize 40
+col INST_ID for 99
+col spid for a10
+set linesize 150
+col PROGRAM for a10
+col action format a10
+col logon_time format a16
+col module format a13
+col cli_process format a7
+col cli_mach for a15
+col status format a10
+col username format a10
+col last_call_et for 9999.99
+col sql_hash_value for 9999999999999col username for a10
+set linesize 152
+set pagesize 80
+col "Last SQL" for a30
+col elapsed_time for 999999999999
+select p.spid, s.sid,s.process cli_process,s.last_call_et/3600 last_call_et ,
+s.status,s.action,s.module,s.program,t.disk_reads,lpad(t.sql_text,30) "Last SQL"
+from gv$session s, gv$sqlarea t,gv$process p
+where s.sql_address =t.address and
+s.sql_hash_value =t.hash_value and
+p.addr=s.paddr 
+and s.MODULE like ('&MODULE_NAME_1HR%')
+and s.last_call_et > ('&TIME_HRS' * 3600)
+order by last_call_et;
+
+select p.spid, s.sid,s.process cli_process,s.last_call_et/3600 last_call_et ,
+s.status,s.action,s.module,s.program
+from gv$session s, gv$sqlarea t,gv$process p
+where s.sql_address =t.address and
+p.addr=s.paddr 
+and s.MODULE like ('%TOAD%')
+Order by last_call_et;
+
+TOAD SESSIONS
+
+select p.spid, s.sid,s.process cli_process,s.last_call_et/3600 last_call_et ,
+s.status,s.action,s.module,s.program
+from gv$session s, gv$process p
+where
+p.addr=s.paddr 
+and s.MODULE like ('%TOAD%')
+Order by last_call_et;
+
+CLIENT MACHINE SESSIONS COUNT
+
+select count(s.process) TOTAL from v$session S
+where s.machine like ('%&CLIENT_MACHINE%');
+
+select count(s.process) INACTIVE from v$session S
+where s.machine like ('%&CLIENT_MACHINE%')
+and s.status='INACTIVE';
+
+hash value=0
+
+select count(s.process) from v$session S
+where s.machine like ('%&CLIENT_MACHINE%')
+AND S.SQL_HASH_VALUE=0;
+
+select count(s.process) from v$session S
+where s.machine like ('%&CLIENT_MACHINE%')
+AND S.SQL_HASH_VALUE=0
+AND S.LAST_CALL_ET > 3600;
+
+Unique Actions
+
+col module for a40             
+prompt INACTIVE SESSIONS
+col INACTIVE_PROGRAMS FOR A40
+select distinct (s.program) INACTIVE_PROGRAMS,s.module
+from gv$session s, gv$sqlarea t,v$process p
+where s.sql_address =t.address and
+s.sql_hash_value =t.hash_value and
+s.machine like ('%&CLIENT_MACHINE%') AND
+p.addr=s.paddr and
+s.status='INACTIVE';
+
+GROUP BY  program
+
+col program for a60
+prompt TOTAL SESSIONS
+col INACTIVE_PROGRAMS FOR A40
+select s.program,count(s.program) Total_Inactive_Sessions
+from gv$session s, gv$sqlarea t,v$process p
+where s.sql_address =t.address and
+s.sql_hash_value =t.hash_value and
+p.addr=s.paddr  AND
+s.machine like ('%&CLIENT_MACHINE%') AND
+s.status='INACTIVE'
+group by s.program;
+ 
+ 
+Thanks 
+Srini

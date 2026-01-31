@@ -1,0 +1,38 @@
+
+Check datafiles and tablespace information in Oracle
+
+Check which datafile belong to which tablespace with views in Oracle
+
+Check information about datafiles
+
+SQL> select * from dba_data_files;
+SQL> select * from v$datafile;
+Check information about tablespace
+
+SQL> select * from dba_tablespaces
+SQL> select * from v$tablespace;
+check size of datafiles
+
+select file_name,bytes/1024/1024/1024 from v$datafile; 
+Check the tablespace size
+
+SELECT df.tablespace_name "Tablespace",
+  totalusedspace "Used MB",
+  (df.totalspace - tu.totalusedspace) "Free MB",
+  df.totalspace "Total MB",
+  ROUND(100 * ( (df.totalspace - tu.totalusedspace)/ df.totalspace)) "% Free"
+FROM
+  (SELECT tablespace_name,
+    ROUND(SUM(bytes) / 1048576) TotalSpace
+  FROM dba_data_files
+  GROUP BY tablespace_name
+  ) df,
+  (SELECT ROUND(SUM(bytes)/(1024*1024)) totalusedspace,
+    tablespace_name
+  FROM dba_segments
+  GROUP BY tablespace_name
+  ) tu
+WHERE df.tablespace_name = tu.tablespace_name;
+
+
+https://smarttechways.com/2021/07/07/check-datafiles-and-tablespace-information-in-oracle/

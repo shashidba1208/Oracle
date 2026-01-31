@@ -1,0 +1,50 @@
+
+
+Grant select privileges on all tables to another user in Oracle
+Leave a reply
+Grant Select permission on all tables to another user in Oracle
+
+The following script can be used to grant the select permission on all the tables of the particular schema.
+
+username: which wants to grant permission on the table or owner of the tables.
+
+grantee: which user do you want to give permission
+
+ FOR r IN (
+        SELECT owner, table_name 
+        FROM all_tables 
+        WHERE owner = <username>
+    )
+    LOOP
+        EXECUTE IMMEDIATE 
+            'GRANT SELECT ON '||r.owner||'.'||r.table_name||' to ' || <grantee>;
+    END LOOP;
+
+Example: 
+User Scott want to give select permission to user HR:
+ FOR r IN ( 
+        SELECT owner, table_name 
+        FROM all_tables 
+        WHERE owner = 'scott'
+    )
+    LOOP
+        EXECUTE IMMEDIATE 
+            'GRANT SELECT ON '||r.owner||'.'||r.table_name||' to ' || HR;
+    END LOOP;
+you can also use the following script:( you can run this from owner of the tables and only need to replace other user like HR
+
+FOR x IN (SELECT * FROM user_tables)
+LOOP   
+ EXECUTE IMMEDIATE 'GRANT SELECT ON ' || x.table_name || ' TO <<other user>>'; 
+END LOOP;
+
+
+Example 
+User scott want to give select privilest to user HR:
+ 
+sqlplus scott/tiger@orcl
+FOR x IN (SELECT * FROM user_tables)
+LOOP   
+ EXECUTE IMMEDIATE 'GRANT SELECT ON ' || x.table_name || ' TO HR'; 
+END LOOP;
+

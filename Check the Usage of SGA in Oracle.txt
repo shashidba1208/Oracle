@@ -1,0 +1,46 @@
+
+Check the Usage of SGA in Oracle
+Leave a reply
+Check SGA total size and free space usage in Oracle
+Check the Usage of SGA
+
+select round(used.bytes /1024/1024 ,2) used_mb
+, round(free.bytes /1024/1024 ,2) free_mb
+, round(tot.bytes /1024/1024 ,2) total_mb
+from (select sum(bytes) bytes
+from v$sgastat
+where name != 'free memory') used
+, (select sum(bytes) bytes
+from v$sgastat
+where name = 'free memory') free
+, (select sum(bytes) bytes
+from v$sgastat) tot ;
+
+
+
+   USED_MB    FREE_MB   TOTAL_MB
+---------- ---------- ----------
+    799.69      736.3       1536
+
+Find the Total Size of SGA
+
+SELECT sum(value)/1024/1024 "TOTAL SGA (MB)" FROM v$sga;
+TOTAL SGA (MB)
+--------------
+1535.99715
+
+Check size of different pool in SGA
+
+Select POOL, Round(bytes/1024/1024,0) Free_Memory_In_MB From V$sgastat Where Name Like '%free memory%';
+
+
+
+POOL           FREE_MEMORY_IN_MB
+-------------- -----------------
+shared pool                  564
+large pool                   108
+java pool                     32
+streams pool                  32
+
+https://smarttechways.com/2021/02/09/check-the-usage-of-sga-in-oracle/
+

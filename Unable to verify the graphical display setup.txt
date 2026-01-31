@@ -1,0 +1,34 @@
+
+
+ERROR: Unable to verify the graphical display setup. Make sure that xdpyinfo exist under PATH variable.
+Leave a reply
+ERROR: Unable to verify the graphical display setup. This application requires X display. Make sure that xdpyinfo exist under PATH variable.
+
+Error: During running the runInstaller to Setup Oracle Database, we are getting the following error
+
+ERROR: Unable to verify the graphical display setup. This application requires X display. Make sure that xdpyinfo exist under PATH variable.
+Authorization required, but no authorization protocol specified
+Can't connect to X11 window server using ':0' as the value of the DISPLAY variable.
+Solution:
+
+Install the x11 package in Ubuntu operating system.
+
+Sudo apt-get install x11-utils
+Add the user Oracle to access control list for X11 with command: xhost +SI:localuser:<user>
+
+oracle@Oracle1:/u01/app/oracle$ su root
+
+Password: 
+
+root@Oracle1:/u01/app/oracle# xhost +SI:localuser:oracle
+
+localuser:oracle being added to access control list
+
+root@Oracle1:/u01/app/oracle#
+Try again to start the runInstaller
+
+oracle@Oracle1:/u01/app/oracle$ ./runInstaller 
+
+Launching Oracle Database Setup Wizard...
+
+https://smarttechways.com/2023/01/03/error-unable-to-verify-the-graphical-display-setup-make-sure-that-xdpyinfo-exist-under-path-variable/

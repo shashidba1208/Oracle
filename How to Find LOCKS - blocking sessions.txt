@@ -1,0 +1,89 @@
+How to Find LOCKS / blocking sessions :
+
+
+Show locked objects
+set lines 100 pages 999
+col username  format a20
+col sess_id  format a10
+col object format a25
+col mode_held format a10
+select oracle_username || ‘ (‘ || s.osuser || ‘)’ username
+, s.sid || ‘,’ || s.serial# sess_id
+, owner || ‘.’ || object_name object
+, object_type
+, decode( l.block
+, 0, ‘Not Blocking’
+, 1, ‘Blocking’
+, 2, ‘Global’) status
+, decode(v.locked_mode
+, 0, ‘None’
+, 1, ‘Null’
+, 2, ‘Row-S (SS)’
+, 3, ‘Row-X (SX)’
+, 4, ‘Share’
+, 5, ‘S/Row-X (SSX)’
+, 6, ‘Exclusive’, TO_CHAR(lmode)) mode_held
+from v$locked_object v
+, dba_objects d
+, v$lock l
+, v$session s
+where  v.object_id = d.object_id
+and  v.object_id = l.id1
+and  v.session_id = s.sid
+order by oracle_username
+, session_id;
+Find Which ROW is locked :
+select do.object_name
+, row_wait_obj#
+, row_wait_file#
+, row_wait_block#
+, row_wait_row#
+, dbms_rowid.rowid_create (1, ROW_WAIT_OBJ#, ROW_WAIT_FILE#,
+ROW_WAIT_BLOCK#, ROW_WAIT_ROW#)
+from v$session s
+, dba_objects do
+where sid=&sid
+and  s.ROW_WAIT_OBJ# = do.OBJECT_ID;
+List of Locks:
+column lock_type format a12
+column mode_held format a10
+column mode_requested format a10
+column blocking_others format a20
+column username format a10
+SELECT session_id
+, lock_type
+, mode_held
+, mode_requested
+, blocking_others
+, lock_id1
+FROM dba_lock l
+WHERE  lock_type NOT IN (‘Media Recovery’, ‘Redo Thread’)
+SELECT DISTINCT a.sid “BLOCKED”, a.serial# “BLOCKEDSERIAL”, a.username “BLOCKEDUSER”, d.sid “BLOCKEDBYSID”,
+d.serial# “BLOCKEDBYSERIAL#”, d.username “BLOCKINGUSERNAME”
+from v$session a, dba_objects b, dba_data_files c, v$lock e,
+(SELECT b.sid, b.serial#, b.username, a.id1
+from v$lock a, v$session b where block=1
+and a.sid=b.sid) d
+where a.row_wait_obj#=b.object_id
+and a.row_wait_file#=c.file_id
+and a.lockwait is not null
+and e.id1=d.id1
+and e.block=0 and e.type=’TX’;
+Script to Kill all the locks:
+SELECT OS_USER_NAME, ORACLE_USERNAME AS orauser, s.sid, o.object_name,
+o.object_type, s.serial#, a.sql_text
+FROM v$locked_object l, dba_objects o, v$session s, v$sqlarea a
+WHERE l.object_id = o.object_id
+AND s.SQL_ADDRESS = a.address
+AND l.SESSION_ID = s.sid;
+SELECT ‘ALTER SYSTEM KILL SESSION ”’||TO_CHAR(s.sid)||’,’||TO_CHAR(s.serial#)||”’;’
+AS “Statement to kill”
+FROM v$locked_object l, dba_objects o, v$session s
+WHERE l.object_id = o.object_id
+AND l.SESSION_ID = s.sid;
+
+Thanks
+Srini
+
+https://anjaniappsdba.blogspot.com/2016/01/how-to-find-locks-blocking-sessions.html
+

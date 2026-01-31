@@ -1,0 +1,64 @@
+
+Check the Patch Applied to the Oracle Database
+
+Find the date and patch number applied in Oracle Database.
+List the patches applied in Oracle Database
+
+Go to directory
+CD %ORACLE_HOME%\OPatch
+opatch lspatches
+List the patches with lsinventory
+
+-- on Windows system:
+CD %ORACLE_HOME%\OPatch
+opatch lsinventory
+
+--On Linux
+$ORACLE_HOME/OPatch/opatch lsinventory|grep "Patch description"
+Check the patches more in details with lsinventory details command
+
+--on Windows:
+%ORACLE_HOME%\opatch\opatch lsinventory -details
+
+--on linux
+$ORACLE_HOME/OPatch/opatch lsinventory -details
+Check Patches from SQLPLUS by connecting with SYSDBA
+
+-- For upto 11g
+COLUMN action_time FORMAT A20
+COLUMN action FORMAT A20
+
+COLUMN version FORMAT A10
+COLUMN comments FORMAT A30
+COLUMN bundle_series FORMAT A10
+
+SELECT TO_CHAR(action_time, 'DD-MON-YYYY HH24:MI:SS') AS action_time,
+action,
+ version, id, comments, bundle_series
+FROM   sys.registry$history
+ORDER by action_time;
+
+--From 12c onwards
+col action_time for a28
+col action for a8
+col version for a8
+col comments for a30
+col status for a10
+set line 999 pages 999
+select patch_id,  version, status, Action,Action_time from dba_registry_sqlpatch order by action_time;
+Advertisements
+
+REPORT THIS AD
+
+Check patch is applied or not with DBMS package
+
+--- Put patch number which you want to check
+select xmltransform(dbms_qopatch.is_patch_installed('29494060'),dbms_qopatch.get_opatch_xslt) "Patch installed?" from dual;
+Check all patches applied from DBMS
+
+ set serverout on;
+ exec dbms_qopatch.get_sqlpatch_status;
+ 
+ https://smarttechways.com/2021/06/02/check-the-patch-applied-to-the-oracle-database/
+ 
+ 

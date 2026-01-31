@@ -1,0 +1,77 @@
+Steps -
+
+1) CREATE A PROGRAM :--
+
+begin
+dbms_scheduler.create_program
+(
+program_name => 'DATE_DIRECTORY',
+program_type => 'EXECUTABLE',
+program_action => '/oradata2/datedir.sh',
+enabled => TRUE,
+comments => 'DATE DIRECTORY'
+);
+end;
+/
+
+2} CREATE A SCHEDULE FOR THE JOB : -
+
+#Job will run daily at 07:15 am
+
+begin
+dbms_scheduler.create_schedule
+(
+schedule_name => 'EVERY_DAY'
+,start_date => TO_TIMESTAMP_TZ('2024/03/22 07:15:00.000000 +05:30','yyyy/mm/dd hh24:mi:ss.ff tzh:tzm')
+,repeat_interval => 'FREQ=DAILY; INTERVAL=1'
+,end_date => NULL,
+comments => 'Every Day'
+);
+end;
+/
+
+3) CREATE A JOB i.e ASSOCIATE WITH SCHEDULE : -
+
+begin
+dbms_scheduler.create_job
+(
+job_name => 'RUN_DATE_DIRECTORY',
+program_name => 'DATE_DIRECTORY',
+schedule_name => 'EVERY_DAY',
+comments => 'DATE DIRECTORY',
+enabled => TRUE
+);
+end;
+/
+
+
+#Note -
+a) program_name should be same in Step 1 & Step 3
+b) schedule_name should be same in Step 2 & step 3
+c) create the plsql block from sys db user
+
+#Check Schedule job status with below query -
+
+select log_id, log_date, job_name, status, error#, additional_info
+from dba_scheduler_job_run_details
+where job_name ='RUN_DATE_DIRECTORY;
+
+#DROP PROGRAM,SCHEDULE & JOB from below query
+
+BEGIN
+SYS.DBMS_SCHEDULER.DROP_JOB
+(job_name => 'RUN_DATE_DIRECTORY');
+END;
+/
+
+BEGIN
+DBMS_SCHEDULER.DROP_PROGRAM('DATE_DIRECTORY');
+END;
+/
+
+BEGIN
+DBMS_SCHEDULER.DROP_SCHEDULE('EVERY_DAY');
+END;
+/
+
+

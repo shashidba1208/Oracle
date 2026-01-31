@@ -1,0 +1,64 @@
+How to monitor ASM disk usage in Oracle
+Leave a reply
+Script to monitor the ASM disk usage in Oracle
+The following disk gives you an idea of the Total size, used size, and percentage of space used.
+
+SET LINESIZE 150 
+SET PAGESIZE 9999 
+SET VERIFY off
+COLUMN group_name 
+FORMAT a25 HEAD 'DISKGROUP_NAME' 
+COLUMN state FORMAT a11 HEAD 'STATE' 
+COLUMN type FORMAT a6 HEAD 'TYPE' 
+COLUMN total_mb FORMAT 999,999,999 HEAD 'TOTAL SIZE(GB)' 
+COLUMN free_mb FORMAT 999,999,999 HEAD 'FREE SIZE (GB)' 
+COLUMN used_mb FORMAT 999,999,999 HEAD 'USED SIZE (GB)' 
+COLUMN pct_used FORMAT 999.99 HEAD 'PERCENTAGE USED' 
+SELECT distinct name group_name , state state , type type , 
+round(total_mb/1024) TOTAL_GB , round(free_mb/1024) free_gb , 
+round((total_mb - free_mb) / 1024) used_gb , 
+round((1- (free_mb / total_mb))*100, 2) pct_used from 
+v$asm_diskgroup where round((1- (free_mb / total_mb))*100, 2) > 90 ORDER BY 
+name;
+You can schedule this script in Crontab to give you an alert daily as an automation
+
+Save the following file in shell format
+
+cat asmscriptusage.sh
+
+export ORACLE_HOME=/u01/app/oracle/product/12.2.0/dbhome_1
+export ORACLE_SID=PRIMDB
+export PATH=$ORACLE_HOME/bin:$PATH
+logfile=/u03/log/asm_dg.log
+sqlplus -s "/as sysdba" > /dev/null << EOF spool $logfile 
+SET LINESIZE 150 
+SET PAGESIZE 9999 
+SET VERIFY off
+COLUMN group_name 
+FORMAT a25 HEAD 'DISKGROUP_NAME' 
+COLUMN state FORMAT a11 HEAD 'STATE' 
+COLUMN type FORMAT a6 HEAD 'TYPE' 
+COLUMN total_mb FORMAT 999,999,999 HEAD 'TOTAL SIZE(GB)' 
+COLUMN free_mb FORMAT 999,999,999 HEAD 'FREE SIZE (GB)' 
+COLUMN used_mb FORMAT 999,999,999 HEAD 'USED SIZE (GB)' 
+COLUMN pct_used FORMAT 999.99 HEAD 'PERCENTAGE USED' 
+SELECT distinct name group_name , state state , type type , 
+round(total_mb/1024) TOTAL_GB , round(free_mb/1024) free_gb , 
+round((total_mb - free_mb) / 1024) used_gb , 
+round((1- (free_mb / total_mb))*100, 2) pct_used from 
+v$asm_diskgroup where round((1- (free_mb / total_mb))*100, 2) > 90 ORDER BY 
+name;
+spool off
+exit
+EOF
+count=`cat $logfile|wc -l`
+#echo $count
+if [ $count -ge 4 ];
+then
+ mailx -s "ASM DISKGROUP REACHED 90% UTILIZATION" dbasupport@gmail.com < 
+$logfile
+fi
+Note: The script will trigger a mail alert if the utilization of the ASM disk group reaches 90 percent
+
+https://smarttechways.com/2023/07/17/how-to-monitor-asm-disk-usage-in-oracle/
+

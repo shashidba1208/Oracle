@@ -1,0 +1,63 @@
+Exclude/Include option in EXPDP/IMPDP Datapump Oracle
+Exclude and include option used to limit the object type which can be exported and imported in Datapump.
+
+EXCLUDE means only the specified objects will be except rest all will be exported/imported.
+EXCLUDE=object_type[:name_clause],object_type:[name_clause]
+
+INCLUDE means only the specified objects will be included in the EXPDP/IMPDP process.
+INCLUDE=object_type:[name_clause],object_type:[name_clause]
+
+Note:
+OBJECT_TYPE clause is used to define the type of object such as Table, sequence, view, procedure, package etc.
+NAME_CLAUSE specify the filter with SQL Expression.
+
+Example of Exclude
+
+--Can be used in single line
+EXCLUDE=TABLE,VIEW,PACKAGE:"LIKE '%PKG'"
+-- Exclude the schema
+EXCLUDE=SCHEMA:"='HR'"
+-- Exclude the tables
+exclude=TABLE:"IN ('EMPLOYEES','DEPT')"
+exclude=TABLE:"= 'SALARY'"
+--Exclude function
+EXCLUDE=FUNCTION
+--Exclude procedure
+EXCLUDE=PROCEDURE
+-- Exclude package
+EXCLUDE=PACKAGE
+--Exclude index start with EMP% with like operator
+EXCLUDE=INDEX:"LIKE 'EMP%' "
+--Exclude SCHEMA
+EXCLUDE=SCHEMA:"IN ('SYS','SYSTEM')"
+
+Example of Include:
+
+--Used single command for all values
+INCLUDE=TABLE,VIEW,PACKAGE:"LIKE '%API'"
+-- Used for all table
+INCLUDE=TABLE
+-- Used for only all views
+INCLUDE=VIEW
+-- Used for package name like
+INCLUDE=PACKAGE:"LIKE '%PKG'"
+-- Include schema
+INCLUDE=SCHEMA:"IN ('HR','SCOTT')"
+
+Note: In Some OS, if we are running on command line then we include escaped for defining commands as:
+include=TABLE:\"IN (\'EMP\')\"
+
+Advertisements
+
+REPORT THIS AD
+Example of complete commands:
+
+-- Exclude two table from exporting dump for HR schemas
+EXPDP dumpfile=test.dmp logfile=test.log directory=dbbackup exclude=TABLE:"IN ('EMP','DEPT')" schemas=HR
+-- Exclude few schemas while import:
+IMPDP dumpfile=test.dmp logfile=test1.log directory=dbbackup EXCLUDE=SCHEMA:"IN ('WMSYS', 'OUTLN')"
+--export/Import only TABLE and INDEX ( OBJECT_TYPE)
+EXPDP dumpfile=test.dmp logfile=test.log directory=dbbackup INCLUDE=TABLE,INDEX
+
+https://smarttechways.com/2021/03/13/exclude-include-option-in-expdp-and-impdp-datapump/
+
